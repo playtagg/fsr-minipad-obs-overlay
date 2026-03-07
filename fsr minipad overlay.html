@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FSR Mini Pad Overlay</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 512px; height: 512px; background: transparent; overflow: hidden; }
+  svg { position: absolute; top: 0; left: 0; }
+  .po { transition: opacity 0.05s; opacity: 0; }
+  .po.on { opacity: 1; }
+</style>
+</head>
+<body>
+<!--
+  512×512 canvas.
+  Center panel: 242×242px, top-left at (135,135), bottom-right at (377,377)
+  Each arrow panel: 238px wide × 133px tall
+    UP:    x:135..373, y:2..135
+    DOWN:  x:135..373, y:377..510
+    LEFT:  x:2..135,   y:135..373   (133px wide × 238px tall)
+    RIGHT: x:377..510, y:135..373   (133px wide × 238px tall)
+
+  Octagon points: 135,2  377,2  510,135  510,377  377,510  135,510  2,377  2,135
+
+  UP panel internals (238×133):
+    - LED PCB: centered in panel both ways
+        width: 170px (19.5cm scaled), height: 30px (2 rows of LEDs)
+        x: 135 + (238-170)/2 = 135+34 = 169 .. 339
+        y: 135/2 - 15 = 52 .. 82  (centered vertically in panel: panel center y = 135/2+2 = 68, so y:53..83)
+    - FSR assembly: centered horizontally, below LED
+        width: 190px, height: 26px
+        x: 135 + (238-190)/2 = 135+24 = 159 .. 349
+        FSR center y = 68, so put LED at y:53..83, FSR below at y:93..119
+        Actually center everything:
+        Panel y range: 2..135, center = 68
+        LED (30px tall): y: 68-15=53 .. 68+15=83
+        FSR (26px tall): y: 68+22=90 .. 68+22+26=116
+        Wait — both LED and FSR can't both be centered, LED centered with FSR below:
+        Total content height: 30 + 12gap + 26 = 68px
+        Content starts at: 68 - 34 = 34 → y:36
+        LED: y:36..66
+        FSR: y:78..104
+    - Screws: on outer edge (y=2 for UP), x=157 and x=355 (22px from panel edges 135 and 377)
+
+  DOWN panel: same layout but flipped vertically
+    Panel y: 377..510, center y = 443
+    LED: y: 443-15=428 .. 443+15=458  → but FSR is closer to center (y=377 side)
+    Actually for DOWN, outer edge = y=510, inner edge = y=377
+    So LED (outer) should be near y=510, FSR near y=377
+    Content: LED at bottom, FSR above
+    Content height 68px, center at 443:
+    FSR: y: 443-34=409 .. 409+26=435
+    LED: y: 409+26+12=447 .. 447+30=477
+    Screws at y=510: x=157 and x=355
+
+  LEFT panel: 133×238px, x:2..135, y:135..373
+    Outer edge = x=2, inner edge = x=135
+    Center: x=68, y=254
+    LED (vertical, 30px wide × 170px tall): x:53..83, y:169..339
+    FSR (vertical, 26px wide × 190px tall): x:90..116, y:159..349
+    Content width 68px centered at x=68:
+    LED: x:34..64, FSR: x:78..104
+    Screws at x=2: y=157 and y=355
+
+  RIGHT panel: 133×238px, x:377..510, y:135..373
+    Outer edge = x=510, inner edge = x=377
+    Center: x=443, y=254
+    LED: x: 443+15=458..443-15=428 → x:428..458
+    Content centered:
+    LED: x:446..476, FSR: x:412..438
+    Screws at x=510: y=157 and y=355
+-->
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mtl" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d2d2d2"/>
+      <stop offset="50%" stop-color="#b8b8b8"/>
+      <stop offset="100%" stop-color="#c6c6c6"/>
+    </linearGradient>
+    <pattern id="brsh" x="0" y="0" width="1" height="3" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="512" y2="0" stroke="rgba(255,255,255,0.055)" stroke-width="0.8"/>
+    </pattern>
+    <filter id="gp" x="-120%" y="-120%" width="340%" height="340%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="gb" x="-120%" y="-120%" width="340%" height="340%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="blm" x="-200%" y="-200%" width="500%" height="500%">
+      <feGaussianBlur stdDeviation="20"/>
+    </filter>
+  </defs>
+
+  <!-- ═══════════════════════════════════
+       PAD BODY + CORNERS
+  ════════════════════════════════════════ -->
+  <polygon points="135,2 377,2 510,135 510,377 377,510 135,510 2,377 2,135"
+    fill="url(#mtl)" stroke="#888" stroke-width="2"/>
+  <polygon points="135,2 377,2 510,135 510,377 377,510 135,510 2,377 2,135"
+    fill="url(#brsh)"/>
+  <!-- Corner triangles -->
+  <polygon points="135,2   2,135  135,135" fill="#aaa" stroke="#888" stroke-width="1"/>
+  <polygon points="377,2  510,135 377,135" fill="#aaa" stroke="#888" stroke-width="1"/>
+  <polygon points="2,377  135,510 135,377" fill="#aaa" stroke="#888" stroke-width="1"/>
+  <polygon points="510,377 377,510 377,377" fill="#aaa" stroke="#888" stroke-width="1"/>
+
+  <!-- ═══════════════════════════════════
+       CENTER PANEL
+  ════════════════════════════════════════ -->
+  <rect x="135" y="135" width="242" height="242" fill="url(#mtl)" stroke="#aaa" stroke-width="1.5"/>
+  <rect x="135" y="135" width="242" height="30" fill="rgba(255,255,255,0.06)"/>
+
+  <!-- ═══════════════════════════════════
+       ACRYLIC PANELS
+  ════════════════════════════════════════ -->
+  <rect x="135" y="2"   width="242" height="133" fill="#1e1e1e" stroke="#3a3a3a" stroke-width="1.5"/> <!-- UP -->
+  <rect x="135" y="377" width="242" height="133" fill="#1e1e1e" stroke="#3a3a3a" stroke-width="1.5"/> <!-- DOWN -->
+  <rect x="2"   y="135" width="133" height="242" fill="#1e1e1e" stroke="#3a3a3a" stroke-width="1.5"/> <!-- LEFT -->
+  <rect x="377" y="135" width="133" height="242" fill="#1e1e1e" stroke="#3a3a3a" stroke-width="1.5"/> <!-- RIGHT -->
+
+  <!-- ═══════════════════════════════════
+       UP PANEL INTERNALS
+       Panel: x:135..377, y:2..135 (242×133)
+       Center: x=256, y=68
+       LED PCB (170×30): x:171..341, y:53..83
+       FSR assembly (190×26): x:161..351, y:95..121
+       Screws (outer=top): x=157,y=8 and x=355,y=8
+  ════════════════════════════════════════ -->
+  <!-- LED PCB -->
+  <rect x="171" y="53" width="170" height="30" rx="2" fill="#b8c8d0" stroke="#8aa0a8" stroke-width="0.8"/>
+  <!-- Row 1 (y=61) -->
+  <g fill="#666" stroke="#444" stroke-width="0.4">
+    <circle cx="182" cy="61" r="5"/><circle cx="203" cy="61" r="5"/><circle cx="224" cy="61" r="5"/>
+    <circle cx="245" cy="61" r="5"/><circle cx="266" cy="61" r="5"/><circle cx="287" cy="61" r="5"/>
+    <circle cx="308" cy="61" r="5"/><circle cx="329" cy="61" r="5"/>
+  </g>
+  <!-- Row 2 (y=75) -->
+  <g fill="#666" stroke="#444" stroke-width="0.4">
+    <circle cx="182" cy="75" r="5"/><circle cx="203" cy="75" r="5"/><circle cx="224" cy="75" r="5"/>
+    <circle cx="245" cy="75" r="5"/><circle cx="266" cy="75" r="5"/><circle cx="287" cy="75" r="5"/>
+    <circle cx="308" cy="75" r="5"/><circle cx="329" cy="75" r="5"/>
+  </g>
+  <!-- FSR assembly — centered between LED bottom (y=83) and inner edge (y=135), midpoint y=109 -->
+  <rect x="175" y="96" width="162" height="26" rx="2" fill="#111" stroke="#1e1e1e" stroke-width="1"/>
+  <rect x="161" y="93" width="28" height="32" rx="2" fill="#181818" stroke="#222" stroke-width="0.8"/>
+  <rect x="323" y="93" width="28" height="32" rx="2" fill="#181818" stroke="#222" stroke-width="0.8"/>
+  <rect x="189" y="102" width="134" height="12" rx="1" fill="#2a2828" stroke="#333" stroke-width="0.5"/>
+  <!-- Screws UP -->
+  <rect x="149" y="11" width="16" height="16" rx="2" transform="rotate(45,157,19)" fill="#1c1c1c" stroke="#111" stroke-width="0.8"/>
+  <circle cx="157" cy="19" r="5" fill="none" stroke="#666" stroke-width="1.2"/>
+  <circle cx="157" cy="19" r="2" fill="#555"/>
+  <rect x="347" y="11" width="16" height="16" rx="2" transform="rotate(45,355,19)" fill="#1c1c1c" stroke="#111" stroke-width="0.8"/>
+  <circle cx="355" cy="19" r="5" fill="none" stroke="#666" stroke-width="1.2"/>
+  <circle cx="355" cy="19" r="2" fill="#555"/>
+
+  <!-- ═══════════════════════════════════
+       DOWN PANEL INTERNALS
+       Panel: x:135..377, y:377..510 (242×133)
+       Center: x=256, y=443
+       Outer edge = y=510, inner edge = y=377
+       LED PCB (170×30): x:171..341, y:429..459
+       FSR assembly: y:391..417
+       Screws (outer=bottom): x=157,y=503 and x=355,y=503
+  ════════════════════════════════════════ -->
+  <rect x="171" y="429" width="170" height="30" rx="2" fill="#b8c8d0" stroke="#8aa0a8" stroke-width="0.8"/>
+  <g fill="#666" stroke="#444" stroke-width="0.4">
+    <circle cx="182" cy="437" r="5"/><circle cx="203" cy="437" r="5"/><circle cx="224" cy="437" r="5"/>
+    <circle cx="245" cy="437" r="5"/><circle cx="266" cy="437" r="5"/><circle cx="287" cy="437" r="5"/>
+    <circle cx="308" cy="437" r="5"/><circle cx="329" cy="437" r="5"/>
+  </g>
+  <g fill="#666" stroke="#444" stroke-width="0.4">
+    <circle cx="182" cy="451" r="5"/><circle cx="203" cy="451" r="5"/><circle cx="224" cy="451" r="5"/>
+    <circle cx="245" cy="451" r="5"/><circle cx="266" cy="451" r="5"/><circle cx="287" cy="451" r="5"/>
+    <circle cx="308" cy="451" r="5"/><circle cx="329" cy="451" r="5"/>
+  </g>
+  <rect x="175" y="390" width="162" height="26" rx="2" fill="#111" stroke="#1e1e1e" stroke-width="1"/>
+  <rect x="161" y="387" width="28" height="32" rx="2" fill="#181818" stroke="#222" stroke-width="0.8"/>
+  <rect x="323" y="387" width="28" height="32" rx="2" fill="#181818" stroke="#222" stroke-width="0.8"/>
+  <rect x="189" y="396" width="134" height="12" rx="1" fill="#2a2828" stroke="#333" stroke-width="0.5"/>
+  <!-- Screws DOWN -->
+  <rect x="149" y="485" width="16" height="16" rx="2" transform="rotate(45,157,493)" fill="#1c1c1c" stroke="#111" stroke-width="0.8"/>
+  <circle cx="157" cy="493" r="5" fill="none" stroke="#666" stroke-width="1.2"/>
+  <circle cx="157" cy="493" r="2" fill="#555"/>
+  <rect x="347" y="485" width="16" height="16" rx="2" transform="rotate(45,355,493)" fill="#1c1c1c" stroke="#111" stroke-width="0.8"/>
+  <circle cx="355" cy="493" r="5" fill="none" stroke="#666" stroke-width="1.2"/>
+  <circle cx="355" cy="493" r="2" fill="#555"/>
+
+  <!-- ═══════════════════════════════════
+       LEFT PANEL INTERNALS
+       Panel: x:2..135, y:135..377 (133×242)
+       Center: x=68, y=256
+       Outer edge = x=2, inner edge = x=135
+       LED PCB (30×170): x:53..83, y:171..341
+       FSR assembly (26×162): x:95..121, y:175..337
+       Screws (outer=left): x=9, y=157 and x=9, y=355
+  ════════════════════════════════════════ -->
+  <rect x="53" y="171" width="30" height="170" rx="2" fill="#b8c8d0" stroke="#8aa0a8" stroke-width="0.8"/>
+  <!-- Col 1 (x=61) -->
+  <g fill="#666" stroke="#444" stroke-width="0.4">
+    <circle cx="61" cy="182" r="5"/><circle cx="61" cy="203" r="5"/><circle cx="61" cy="224" r="5"/>
+    <circle cx="61" cy="245" r="5"/><circle cx="61" cy="266" r="5"/><circle cx="61" cy="287" r="5"/>
+    <circle cx="61" cy="308" r="5"/><circle cx="61" cy="329" r="5"/>
+  </g>
+  <!-- Col 2 (x=75) -->
+  <g fill="#666" stroke="#444" stroke-width="0.4">
+    <circle cx="75" cy="182" r="5"/><circle cx="75" cy="203" r="5"/><circle cx="75" cy="224" r="5"/>
+    <circle cx="75" cy="245" r="5"/><circle cx="75" cy="266" r="5"/><circle cx="75" cy="287" r="5"/>
+    <circle cx="75" cy="308" r="5"/><circle cx="75" cy="329" r="5"/>
+  </g>
+  <!-- FSR assembly LEFT — same as UP but rotated 90°, centered at x=109, y=256 -->
+  <rect x="96" y="175" width="26" height="162" rx="2" fill="#111" stroke="#1e1e1e" stroke-width="1"/>
+  <rect x="93" y="161" width="32" height="28" rx="2" fill="#181818" stroke="#222" stroke-width="0.8"/>
+  <rect x="93" y="323" width="32" height="28" rx="2" fill="#181818" stroke="#222" stroke-width="0.8"/>
+  <rect x="102" y="189" width="12" height="134" rx="1" fill="#2a2828" stroke="#333" stroke-width="0.5"/>
+  <!-- Screws LEFT -->
+  <rect x="11"  y="149" width="16" height="16" rx="2" transform="rotate(45,19,157)" fill="#1c1c1c" stroke="#111" stroke-width="0.8"/>
+  <circle cx="19" cy="157" r="5" fill="none" stroke="#666" stroke-width="1.2"/>
+  <circle cx="19" cy="157" r="2" fill="#555"/>
+  <rect x="11"  y="347" width="16" height="16" rx="2" transform="rotate(45,19,355)" fill="#1c1c1c" stroke="#111" stroke-width="0.8"/>
+  <circle cx="19" cy="355" r="5" fill="none" stroke="#666" stroke-width="1.2"/>
+  <circle cx="19" cy="355" r="2" fill="#555"/>
+
+  <!-- ═══════════════════════════════════
+       RIGHT PANEL INTERNALS
+       Panel: x:377..510, y:135..377 (133×242)
+       Center: x=443, y=256
+       Outer edge = x=510, inner edge = x=377
+       LED PCB (30×170): x:429..459, y:171..341
+       FSR assembly: x:391..417
+       Screws (outer=right): x=503, y=157 and x=503, y=355
+  ════════════════════════════════════════ -->
+  <rect x="429" y="171" width="30" height="170" rx="2" fill="#b8c8d0" stroke="#8aa0a8" stroke-width="0.8"/>
+  <g fill="#666" stroke="#444" stroke-width="0.4">
+    <circle cx="437" cy="182" r="5"/><circle cx="437" cy="203" r="5"/><circle cx="437" cy="224" r="5"/>
+    <circle cx="437" cy="245" r="5"/><circle cx="437" cy="266" r="5"/><circle cx="437" cy="287" r="5"/>
+    <circle cx="437" cy="308" r="5"/><circle cx="437" cy="329" r="5"/>
+  </g>
+  <g fill="#666" stroke="#444" stroke-width="0.4">
+    <circle cx="451" cy="182" r="5"/><circle cx="451" cy="203" r="5"/><circle cx="451" cy="224" r="5"/>
+    <circle cx="451" cy="245" r="5"/><circle cx="451" cy="266" r="5"/><circle cx="451" cy="287" r="5"/>
+    <circle cx="451" cy="308" r="5"/><circle cx="451" cy="329" r="5"/>
+  </g>
+  <!-- FSR assembly RIGHT — same as UP but rotated 90°, centered at x=403, y=256 -->
+  <rect x="390" y="175" width="26" height="162" rx="2" fill="#111" stroke="#1e1e1e" stroke-width="1"/>
+  <rect x="387" y="161" width="32" height="28" rx="2" fill="#181818" stroke="#222" stroke-width="0.8"/>
+  <rect x="387" y="323" width="32" height="28" rx="2" fill="#181818" stroke="#222" stroke-width="0.8"/>
+  <rect x="396" y="189" width="12" height="134" rx="1" fill="#2a2828" stroke="#333" stroke-width="0.5"/>
+  <!-- Screws RIGHT -->
+  <rect x="485" y="149" width="16" height="16" rx="2" transform="rotate(45,493,157)" fill="#1c1c1c" stroke="#111" stroke-width="0.8"/>
+  <circle cx="493" cy="157" r="5" fill="none" stroke="#666" stroke-width="1.2"/>
+  <circle cx="493" cy="157" r="2" fill="#555"/>
+  <rect x="485" y="347" width="16" height="16" rx="2" transform="rotate(45,493,355)" fill="#1c1c1c" stroke="#111" stroke-width="0.8"/>
+  <circle cx="493" cy="355" r="5" fill="none" stroke="#666" stroke-width="1.2"/>
+  <circle cx="493" cy="355" r="2" fill="#555"/>
+
+  <!-- ═══════════════════════════════════
+       PRESSED OVERLAYS
+  ════════════════════════════════════════ -->
+
+  <!-- UP pink -->
+  <g class="po" id="led-up">
+    <rect x="135" y="2" width="242" height="133" fill="#cc33cc" opacity="0.10"/>
+    <ellipse cx="256" cy="68" rx="100" ry="28" fill="#dd44ff" filter="url(#blm)" opacity="0.6"/>
+    <rect x="171" y="53" width="170" height="30" rx="2" fill="#1a0018" stroke="#cc33cc" stroke-width="1"/>
+    <g fill="#ff44ee" filter="url(#gp)">
+      <circle cx="182" cy="61" r="5"/><circle cx="203" cy="61" r="5"/>
+      <circle cx="224" cy="61" r="5"/><circle cx="245" cy="61" r="5"/>
+      <circle cx="266" cy="61" r="5"/><circle cx="287" cy="61" r="5"/>
+      <circle cx="308" cy="61" r="5"/><circle cx="329" cy="61" r="5"/>
+      <circle cx="182" cy="75" r="5"/><circle cx="203" cy="75" r="5"/>
+      <circle cx="224" cy="75" r="5"/><circle cx="245" cy="75" r="5"/>
+      <circle cx="266" cy="75" r="5"/><circle cx="287" cy="75" r="5"/>
+      <circle cx="308" cy="75" r="5"/><circle cx="329" cy="75" r="5"/>
+    </g>
+    <g fill="white" opacity="0.6">
+      <circle cx="182" cy="61" r="3"/><circle cx="203" cy="61" r="3"/>
+      <circle cx="224" cy="61" r="3"/><circle cx="245" cy="61" r="3"/>
+      <circle cx="266" cy="61" r="3"/><circle cx="287" cy="61" r="3"/>
+      <circle cx="308" cy="61" r="3"/><circle cx="329" cy="61" r="3"/>
+      <circle cx="182" cy="75" r="3"/><circle cx="203" cy="75" r="3"/>
+      <circle cx="224" cy="75" r="3"/><circle cx="245" cy="75" r="3"/>
+      <circle cx="266" cy="75" r="3"/><circle cx="287" cy="75" r="3"/>
+      <circle cx="308" cy="75" r="3"/><circle cx="329" cy="75" r="3"/>
+    </g>
+  </g>
+
+  <!-- DOWN pink -->
+  <g class="po" id="led-down">
+    <rect x="135" y="377" width="242" height="133" fill="#cc33cc" opacity="0.10"/>
+    <ellipse cx="256" cy="443" rx="100" ry="28" fill="#dd44ff" filter="url(#blm)" opacity="0.6"/>
+    <rect x="171" y="429" width="170" height="30" rx="2" fill="#1a0018" stroke="#cc33cc" stroke-width="1"/>
+    <g fill="#ff44ee" filter="url(#gp)">
+      <circle cx="182" cy="437" r="5"/><circle cx="203" cy="437" r="5"/>
+      <circle cx="224" cy="437" r="5"/><circle cx="245" cy="437" r="5"/>
+      <circle cx="266" cy="437" r="5"/><circle cx="287" cy="437" r="5"/>
+      <circle cx="308" cy="437" r="5"/><circle cx="329" cy="437" r="5"/>
+      <circle cx="182" cy="451" r="5"/><circle cx="203" cy="451" r="5"/>
+      <circle cx="224" cy="451" r="5"/><circle cx="245" cy="451" r="5"/>
+      <circle cx="266" cy="451" r="5"/><circle cx="287" cy="451" r="5"/>
+      <circle cx="308" cy="451" r="5"/><circle cx="329" cy="451" r="5"/>
+    </g>
+    <g fill="white" opacity="0.6">
+      <circle cx="182" cy="437" r="3"/><circle cx="203" cy="437" r="3"/>
+      <circle cx="224" cy="437" r="3"/><circle cx="245" cy="437" r="3"/>
+      <circle cx="266" cy="437" r="3"/><circle cx="287" cy="437" r="3"/>
+      <circle cx="308" cy="437" r="3"/><circle cx="329" cy="437" r="3"/>
+      <circle cx="182" cy="451" r="3"/><circle cx="203" cy="451" r="3"/>
+      <circle cx="224" cy="451" r="3"/><circle cx="245" cy="451" r="3"/>
+      <circle cx="266" cy="451" r="3"/><circle cx="287" cy="451" r="3"/>
+      <circle cx="308" cy="451" r="3"/><circle cx="329" cy="451" r="3"/>
+    </g>
+  </g>
+
+  <!-- LEFT blue -->
+  <g class="po" id="led-left">
+    <rect x="2" y="135" width="133" height="242" fill="#2233cc" opacity="0.10"/>
+    <ellipse cx="68" cy="256" rx="28" ry="100" fill="#2244ff" filter="url(#blm)" opacity="0.6"/>
+    <rect x="53" y="171" width="30" height="170" rx="2" fill="#00001a" stroke="#2266cc" stroke-width="1"/>
+    <g fill="#33aaff" filter="url(#gb)">
+      <circle cx="61" cy="182" r="5"/><circle cx="61" cy="203" r="5"/>
+      <circle cx="61" cy="224" r="5"/><circle cx="61" cy="245" r="5"/>
+      <circle cx="61" cy="266" r="5"/><circle cx="61" cy="287" r="5"/>
+      <circle cx="61" cy="308" r="5"/><circle cx="61" cy="329" r="5"/>
+      <circle cx="75" cy="182" r="5"/><circle cx="75" cy="203" r="5"/>
+      <circle cx="75" cy="224" r="5"/><circle cx="75" cy="245" r="5"/>
+      <circle cx="75" cy="266" r="5"/><circle cx="75" cy="287" r="5"/>
+      <circle cx="75" cy="308" r="5"/><circle cx="75" cy="329" r="5"/>
+    </g>
+    <g fill="white" opacity="0.6">
+      <circle cx="61" cy="182" r="3"/><circle cx="61" cy="203" r="3"/>
+      <circle cx="61" cy="224" r="3"/><circle cx="61" cy="245" r="3"/>
+      <circle cx="61" cy="266" r="3"/><circle cx="61" cy="287" r="3"/>
+      <circle cx="61" cy="308" r="3"/><circle cx="61" cy="329" r="3"/>
+      <circle cx="75" cy="182" r="3"/><circle cx="75" cy="203" r="3"/>
+      <circle cx="75" cy="224" r="3"/><circle cx="75" cy="245" r="3"/>
+      <circle cx="75" cy="266" r="3"/><circle cx="75" cy="287" r="3"/>
+      <circle cx="75" cy="308" r="3"/><circle cx="75" cy="329" r="3"/>
+    </g>
+  </g>
+
+  <!-- RIGHT blue -->
+  <g class="po" id="led-right">
+    <rect x="377" y="135" width="133" height="242" fill="#2233cc" opacity="0.10"/>
+    <ellipse cx="443" cy="256" rx="28" ry="100" fill="#2244ff" filter="url(#blm)" opacity="0.6"/>
+    <rect x="429" y="171" width="30" height="170" rx="2" fill="#00001a" stroke="#2266cc" stroke-width="1"/>
+    <g fill="#33aaff" filter="url(#gb)">
+      <circle cx="437" cy="182" r="5"/><circle cx="437" cy="203" r="5"/>
+      <circle cx="437" cy="224" r="5"/><circle cx="437" cy="245" r="5"/>
+      <circle cx="437" cy="266" r="5"/><circle cx="437" cy="287" r="5"/>
+      <circle cx="437" cy="308" r="5"/><circle cx="437" cy="329" r="5"/>
+      <circle cx="451" cy="182" r="5"/><circle cx="451" cy="203" r="5"/>
+      <circle cx="451" cy="224" r="5"/><circle cx="451" cy="245" r="5"/>
+      <circle cx="451" cy="266" r="5"/><circle cx="451" cy="287" r="5"/>
+      <circle cx="451" cy="308" r="5"/><circle cx="451" cy="329" r="5"/>
+    </g>
+    <g fill="white" opacity="0.6">
+      <circle cx="437" cy="182" r="3"/><circle cx="437" cy="203" r="3"/>
+      <circle cx="437" cy="224" r="3"/><circle cx="437" cy="245" r="3"/>
+      <circle cx="437" cy="266" r="3"/><circle cx="437" cy="287" r="3"/>
+      <circle cx="437" cy="308" r="3"/><circle cx="437" cy="329" r="3"/>
+      <circle cx="451" cy="182" r="3"/><circle cx="451" cy="203" r="3"/>
+      <circle cx="451" cy="224" r="3"/><circle cx="451" cy="245" r="3"/>
+      <circle cx="451" cy="266" r="3"/><circle cx="451" cy="287" r="3"/>
+      <circle cx="451" cy="308" r="3"/><circle cx="451" cy="329" r="3"/>
+    </g>
+  </g>
+
+  <!-- Frame lines -->
+  <line x1="135" y1="135" x2="377" y2="135" stroke="#777" stroke-width="2"/>
+  <line x1="135" y1="377" x2="377" y2="377" stroke="#777" stroke-width="2"/>
+  <line x1="135" y1="135" x2="135" y2="377" stroke="#777" stroke-width="2"/>
+  <line x1="377" y1="135" x2="377" y2="377" stroke="#777" stroke-width="2"/>
+
+</svg>
+<script>
+  const MAP = [
+    { button: 0, id: 'led-left'  },
+    { button: 1, id: 'led-right' },
+    { button: 2, id: 'led-down'  },
+    { button: 3, id: 'led-up'    },
+  ];
+  const els = {};
+  MAP.forEach(({ id }) => els[id] = document.getElementById(id));
+  function tick() {
+    for (const gp of navigator.getGamepads()) {
+      if (!gp) continue;
+      for (const { button, id } of MAP) {
+        const b = gp.buttons[button];
+        if (b) els[id].classList.toggle('on', b.pressed);
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+</script>
+</body>
+</html>
