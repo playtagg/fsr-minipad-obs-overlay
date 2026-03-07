@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FSR Mini Pad Overlay</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 512px;
+    height: 512px;
+    background: transparent;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Outer pad body ── */
+  .pad {
+    width: 420px;
+    height: 420px;
+    background: #1c1c1c;
+    border-radius: 16px;
+    border: 3px solid #2e2e2e;
+    box-shadow:
+      0 0 0 1px #111,
+      0 8px 40px rgba(0,0,0,0.9),
+      inset 0 1px 0 rgba(255,255,255,0.04);
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  /* ── Screw holes in corners ── */
+  .pad::before, .pad::after,
+  .screw-bl, .screw-br {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #3a3a3a, #111);
+    border: 1px solid #111;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
+  }
+  .pad::before { top: 10px; left: 10px; }
+  .pad::after  { top: 10px; right: 10px; }
+  .screw-bl    { bottom: 10px; left: 10px; }
+  .screw-br    { bottom: 10px; right: 10px; }
+
+  /* ── Arrow panels ── */
+  .panel {
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    background: #1a1a1a;
+    border: 1.5px solid #2a2a2a;
+    transition: border-color 0.04s;
+  }
+
+  /* Brushed metal texture */
+  .panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      92deg,
+      rgba(255,255,255,0.012) 0px,
+      rgba(255,255,255,0.012) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    border-radius: 7px;
+    pointer-events: none;
+  }
+
+  /* LED strip */
+  .led {
+    position: absolute;
+    border-radius: 3px;
+    background: #0a0a0a;
+    transition: background 0.04s, box-shadow 0.04s;
+    z-index: 2;
+  }
+
+  /* Arrow */
+  .arrow {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+  }
+  .arrow svg {
+    width: 44%;
+    height: 44%;
+    fill: #2a2a2a;
+    transition: fill 0.04s, filter 0.04s;
+  }
+
+  /* ── Pressed state ── */
+  .panel.pressed {
+    border-color: var(--on-color);
+  }
+  .panel.pressed .arrow svg {
+    fill: var(--on-color);
+    filter: drop-shadow(0 0 6px var(--on-color));
+  }
+  .panel.pressed .led {
+    background: var(--on-color);
+    box-shadow: 0 0 10px var(--on-color), 0 0 24px var(--on-color-dim);
+  }
+
+  /* ── Per-panel LED position & color ── */
+  .panel-up {
+    grid-column: 2; grid-row: 1;
+    --on-color: #33aaff;
+    --on-color-dim: rgba(51,170,255,0.25);
+  }
+  .panel-up .led { bottom: 6px; left: 14px; right: 14px; height: 5px; }
+
+  .panel-left {
+    grid-column: 1; grid-row: 2;
+    --on-color: #33aaff;
+    --on-color-dim: rgba(51,170,255,0.25);
+  }
+  .panel-left .led { right: 6px; top: 14px; bottom: 14px; width: 5px; }
+
+  .panel-right {
+    grid-column: 3; grid-row: 2;
+    --on-color: #33aaff;
+    --on-color-dim: rgba(51,170,255,0.25);
+  }
+  .panel-right .led { left: 6px; top: 14px; bottom: 14px; width: 5px; }
+
+  .panel-down {
+    grid-column: 2; grid-row: 3;
+    --on-color: #33aaff;
+    --on-color-dim: rgba(51,170,255,0.25);
+  }
+  .panel-down .led { top: 6px; left: 14px; right: 14px; height: 5px; }
+
+  /* ── Center panel (brushed metal) ── */
+  .panel-center {
+    grid-column: 2; grid-row: 2;
+    border-radius: 8px;
+    background:
+      repeating-linear-gradient(
+        45deg,
+        rgba(255,255,255,0.018) 0px,
+        rgba(255,255,255,0.018) 1px,
+        transparent 1px,
+        transparent 6px
+      ),
+      linear-gradient(160deg, #2c2c2c 0%, #1a1a1a 50%, #222 100%);
+    border: 1.5px solid #333;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
+  /* ── Corner cells ── */
+  .cell-corner {
+    border-radius: 8px;
+    background: #161616;
+    border: 1.5px solid #1e1e1e;
+  }
+</style>
+</head>
+<body>
+
+<div class="pad">
+  <div class="screw-bl"></div>
+  <div class="screw-br"></div>
+
+  <!-- Row 1 -->
+  <div class="cell-corner"></div>
+  <div class="panel panel-up" id="panel-up">
+    <div class="led"></div>
+    <div class="arrow"><svg viewBox="0 0 24 24"><path d="M12 5l7 9H5z"/></svg></div>
+  </div>
+  <div class="cell-corner"></div>
+
+  <!-- Row 2 -->
+  <div class="panel panel-left" id="panel-left">
+    <div class="led"></div>
+    <div class="arrow"><svg viewBox="0 0 24 24"><path d="M5 12l9-7v14z"/></svg></div>
+  </div>
+  <div class="panel-center"></div>
+  <div class="panel panel-right" id="panel-right">
+    <div class="led"></div>
+    <div class="arrow"><svg viewBox="0 0 24 24"><path d="M19 12l-9 7V5z"/></svg></div>
+  </div>
+
+  <!-- Row 3 -->
+  <div class="cell-corner"></div>
+  <div class="panel panel-down" id="panel-down">
+    <div class="led"></div>
+    <div class="arrow"><svg viewBox="0 0 24 24"><path d="M12 19l7-9H5z"/></svg></div>
+  </div>
+  <div class="cell-corner"></div>
+</div>
+
+<script>
+  // Button mapping: B0=left, B1=right, B2=down, B3=up
+  const BUTTON_MAP = [
+    { button: 0, panel: 'left'  },
+    { button: 1, panel: 'right' },
+    { button: 2, panel: 'down'  },
+    { button: 3, panel: 'up'    },
+  ];
+
+  const panelEls = {
+    left:  document.getElementById('panel-left'),
+    right: document.getElementById('panel-right'),
+    down:  document.getElementById('panel-down'),
+    up:    document.getElementById('panel-up'),
+  };
+
+  function tick() {
+    const gamepads = navigator.getGamepads();
+    for (const gp of gamepads) {
+      if (!gp) continue;
+      for (const { button, panel } of BUTTON_MAP) {
+        const btn = gp.buttons[button];
+        if (btn) panelEls[panel].classList.toggle('pressed', btn.pressed);
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
+</script>
+</body>
+</html>
