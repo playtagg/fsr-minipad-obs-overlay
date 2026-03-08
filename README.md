@@ -1,45 +1,72 @@
 # fsr-minipad-obs-overlay
 
-An OBS browser source overlay that visualizes FSR Mini Pad inputs in real time. Includes two visual styles: a detailed overlay inspired by the design of the [Rhythm Technologies FSR Mini Pad](https://rhythmtechnologies.net), and a clean minimal alternative.
+An OBS browser source overlay that visualizes [Rhythm Technologies FSR Mini Pad](https://rhythmtechnologies.net) inputs in real time. Includes two visual styles, each with a built-in settings page for customizing panel colors and input mapping.
 
 ---
 
 ## Overlays
 
-### `fsr_minipad_overlay.html`
-Detailed overlay modeled after the Rhythm Technologies FSR Mini Pad, complete with FSRs, LED PCBs, brushed metal texture, and corner screws on each panel. For now the up and down panels will turn pink when pressed and the left and right panels will turn blue. This might be updated in the future to allow custom colours.
+### `fsr_minipad_overlay_v2.html`
+Detailed overlay modeled after the Rhythm Technologies FSR Mini Pad, complete with LED PCBs, brushed metal texture, and corner screws.
 
 ![FSR Mini Pad Overlay](Preview%20images/preview_minipad.png)
 
 ---
 
-### `fsr_overlay_simple.html`
-A plain, minimal alternative with the same input functionality. Panels will light up blue when pressed.
+### `fsr_overlay_simple_v2.html`
+A clean, minimal alternative with the same functionality.
 
 ![Standard Overlay](Preview%20images/preview_standard.png)
 
 ---
 
-
-## Setup Guide
+## Setup
 
 1. In OBS, add a **Browser Source**
 2. Check **Local File** and select your chosen `.html` file
 3. Set the width and height to **512×512**
-4. 
+4. Ensure your dance pad is connected before launching OBS
 
-## Input Mapping
+---
 
-This is based on how the input mapping looked like for my minipad (if yours differs then you need to find out which sensor corresponds to which buttonn and change the corresponding values in the HTML files)
+## Configuration
 
-| Button | Direction |
-|--------|-----------|
-| B0 | Left |
-| B1 | Right |
-| B2 | Down |
-| B3 | Up |
+Both overlays include a built-in settings page. To open it, add `?settings` to the end of the file path in your browser:
+
+```
+file:///C:/path/to/fsr_minipad_overlay_v2.html?settings
+```
+
+> The settings page is intentionally hidden from OBS — OBS loads the plain file path with no query string, so it will always show the overlay only.
+
+### Panel Colors
+
+Each arrow panel has its own color picker. The default colors match the ITG2 dedicab arrow panels: **red** for left/right, **blue** for up/down.
+
+### Input Mapping
+
+Since different pads and USB adapters report button numbers differently, input mapping is left **unassigned by default**. To assign a button to a direction:
+
+1. Open the settings page in your browser
+2. Click **Assign** next to the direction you want to map
+3. Press the corresponding button on your pad — it will be detected automatically
+4. Repeat for all four directions
+5. Click **Save**
+
+Until all directions are assigned and saved, the overlay will not respond to any input.
+
+### Saving & Resetting
+
+- **Save** — writes your current colors and input mapping to the browser's local storage. Remember to reload the browser source in OBS after saving.
+- **Reset to defaults** — clears all saved settings and restores the ITG2 default colors and empty input mappings.
+
+---
 
 ## Requirements
 
 - OBS Studio with Browser Source support
-- A gamepad/controller recognized by the browser Gamepad API (Has only been tested with the Rhythm Technologies FSR Mini Pad but I assume this should also work with other pads as long as they can be read by the gamepad api)
+- A gamepad/controller recognized by the browser Gamepad API (such as the Rhythm Technologies FSR Mini Pad)
+
+---
+
+*Made with ❤️ by [playtagg](https://github.com/playtagg)*
