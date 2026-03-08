@@ -37,7 +37,7 @@ Both overlays include a built-in settings page. To open it, add `?settings` to t
 file:///C:/path/to/fsr_minipad_overlay_v2.html?settings
 ```
 
-> The settings page is intentionally hidden from OBS — OBS loads the plain file path with no query string, so it will always show the overlay only.
+> The settings page is intentionally hidden from OBS. OBS loads the plain file path with no query string, so it will always show the overlay only.
 
 ### Panel Colors
 
@@ -45,7 +45,7 @@ Each arrow panel has its own color picker. The default colors match the ITG2 ded
 
 ### Input Mapping
 
-Since different pads and USB adapters report button numbers differently, input mapping is left **unassigned by default**. To assign a button to a direction:
+Button numbers can vary between setups, so input mapping is left **unassigned by default**. To assign a button to a direction:
 
 1. Open the settings page in your browser
 2. Click **Assign** next to the direction you want to map
@@ -57,8 +57,8 @@ Until all directions are assigned and saved, the overlay will not respond to any
 
 ### Saving & Resetting
 
-- **Save** — writes your current colors and input mapping to the browser's local storage. Remember to reload the browser source in OBS after saving.
-- **Reset to defaults** — clears all saved settings and restores the ITG2 default colors and empty input mappings.
+- **Save:** writes your current colors and input mapping to the browser's local storage. Remember to reload the browser source in OBS after saving.
+- **Reset to defaults:** clears all saved settings and restores the ITG2 default colors and empties input mappings.
 
 ---
 
