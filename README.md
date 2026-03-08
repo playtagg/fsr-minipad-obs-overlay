@@ -6,14 +6,14 @@ An OBS browser source overlay that visualizes [Rhythm Technologies FSR Mini Pad]
 
 ## Overlays
 
-### `fsr_minipad_overlay_v2.html`
+### `FSR Mini Pad Overlay`
 Detailed overlay modeled after the Rhythm Technologies FSR Mini Pad, complete with LED PCBs, brushed metal texture, and corner screws.
 
 ![FSR Mini Pad Overlay](Preview%20images/preview_minipad.png)
 
 ---
 
-### `fsr_overlay_simple_v2.html`
+### `Simple Pad Overlay`
 A clean, minimal alternative with the same functionality.
 
 ![Standard Overlay](Preview%20images/preview_standard.png)
