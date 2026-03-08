@@ -2,21 +2,184 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>FSR Mini Pad Overlay</title>
+<title>FSR Mini Pad Overlay v2</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   html, body {
-    width: 512px;
-    height: 512px;
     background: transparent;
     overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+  }
+
+  body.settings-open {
+    background: #0d0d0d !important;
+  }
+
+  /* ── Settings mode wrapper ── */
+  #settings-mode {
+    display: none;
+    width: 100%;
+    background: #0d0d0d;
+    min-height: 100vh;
+  }
+  #settings-mode.visible { display: flex; flex-direction: row; align-items: flex-start; }
+
+  /* ── Left: controls ── */
+  #settings-ui {
+    width: 360px;
+    flex-shrink: 0;
+    background: #111;
+    padding: 20px;
+    border-right: 1px solid #1e1e1e;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-height: 100vh;
+  }
+
+  #settings-ui h2 {
+    color: #aaa;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .color-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .color-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #1a1a1a;
+    border: 1px solid #222;
+    border-radius: 6px;
+    padding: 6px 10px;
+  }
+
+  .color-row label {
+    color: #888;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    flex: 1;
+  }
+
+  .color-row input[type="color"] {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 4px;
+    padding: 0;
+    cursor: pointer;
+    background: none;
+  }
+  .color-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+  .color-row input[type="color"]::-webkit-color-swatch { border: none; border-radius: 3px; }
+
+  .settings-hint {
+    color: #444;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-align: center;
+  }
+
+  .section-divider { border: none; border-top: 1px solid #222; margin: 14px 0; }
+
+  .map-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #1a1a1a;
+    border: 1px solid #222;
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-bottom: 6px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .map-row.listening { border-color: #33aaff; background: #0a1520; }
+  .map-row label { color: #888; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; flex: 1; }
+  .map-status { font-size: 11px; color: #555; min-width: 60px; text-align: right; }
+  .map-row.listening .map-status { color: #33aaff; }
+  .map-btn {
+    background: #222; border: 1px solid #333; border-radius: 4px;
+    color: #777; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 4px 8px; cursor: pointer; transition: background 0.1s, color 0.1s;
+  }
+  .map-btn:hover { background: #2a2a2a; color: #aaa; }
+
+  .action-btn {
+    flex: 1; padding: 8px; border-radius: 5px; border: 1px solid #333;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    cursor: pointer; transition: background 0.1s, color 0.1s;
+  }
+  .save-btn  { background: #1a2a1a; color: #4caf50; border-color: #2a4a2a; }
+  .save-btn:hover  { background: #223322; }
+  .reset-btn { background: #2a1a1a; color: #888; border-color: #3a2a2a; }
+  .reset-btn:hover { background: #331a1a; color: #aaa; }
+
+  .theme-btn { background: #1a1a2a; color: #888; border-color: #2a2a3a; }
+  .theme-btn:hover { background: #22223a; color: #aaa; }
+
+  .credit-link {
+    display: block; text-align: center;
+    color: #444; font-size: 11px; letter-spacing: 0.06em;
+    text-decoration: none; transition: color 0.15s;
+  }
+  .credit-link:hover { color: #888; }
+
+  /* ── Light mode ── */
+  body.light #settings-mode    { background: #f0f0f0; }
+  body.light #settings-ui      { background: #e4e4e4; border-right-color: #ccc; }
+  body.light #settings-ui h2   { color: #555; }
+  body.light .section-divider  { border-color: #ccc; }
+  body.light .settings-hint    { color: #999; }
+  body.light .color-row        { background: #d8d8d8; border-color: #ccc; }
+  body.light .color-row label  { color: #444; }
+  body.light .map-row          { background: #d8d8d8; border-color: #ccc; }
+  body.light .map-row label    { color: #444; }
+  body.light .map-status       { color: #888; }
+  body.light .map-btn          { background: #ccc; border-color: #bbb; color: #555; }
+  body.light .map-btn:hover    { background: #bbb; color: #333; }
+  body.light .map-row.listening { border-color: #0066cc; background: #ddeeff; }
+  body.light .map-row.listening .map-status { color: #0066cc; }
+  body.light .save-btn         { background: #d4edda; color: #2e7d32; border-color: #a5d6a7; }
+  body.light .save-btn:hover   { background: #c3e6cb; }
+  body.light .reset-btn        { background: #f0e0e0; color: #666; border-color: #e0c0c0; }
+  body.light .reset-btn:hover  { background: #e8d0d0; color: #444; }
+  body.light .theme-btn        { background: #dde; color: #556; border-color: #bbc; }
+  body.light .theme-btn:hover  { background: #ccd; color: #334; }
+  body.light .credit-link      { color: #aaa; }
+  body.light .credit-link:hover { color: #666; }
+  body.light #settings-preview { background: #e0e0e0; }
+
+  /* ── Right: preview ── */
+  #settings-preview {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+
+  /* ── Overlay (OBS mode) ── */
+  #overlay {
+    width: 512px;
+    height: 512px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  /* ── Outer pad body ── */
   .pad {
     width: 420px;
     height: 420px;
@@ -35,7 +198,6 @@
     padding: 8px;
   }
 
-  /* ── Screw holes in corners ── */
   .pad::before, .pad::after,
   .screw-bl, .screw-br {
     content: '';
@@ -52,17 +214,15 @@
   .screw-bl    { bottom: 10px; left: 10px; }
   .screw-br    { bottom: 10px; right: 10px; }
 
-  /* ── Arrow panels ── */
   .panel {
     border-radius: 8px;
     position: relative;
     overflow: hidden;
     background: #1a1a1a;
     border: 1.5px solid #2a2a2a;
-    transition: border-color 0.04s;
+    transition: border-color 0.04s, background 0.04s;
   }
 
-  /* Brushed metal texture */
   .panel::before {
     content: '';
     position: absolute;
@@ -78,7 +238,6 @@
     pointer-events: none;
   }
 
-  /* LED strip */
   .led {
     position: absolute;
     border-radius: 3px;
@@ -87,7 +246,6 @@
     z-index: 2;
   }
 
-  /* Arrow */
   .arrow {
     position: absolute;
     inset: 0;
@@ -103,7 +261,7 @@
     transition: fill 0.04s, filter 0.04s;
   }
 
-  /* ── Pressed state ── */
+  /* pressed: driven entirely by JS setting CSS vars per-panel */
   .panel.pressed {
     border-color: var(--on-color);
   }
@@ -116,53 +274,28 @@
     box-shadow: 0 0 10px var(--on-color), 0 0 24px var(--on-color-dim);
   }
 
-  /* ── Per-panel LED position & color ── */
-  .panel-up {
-    grid-column: 2; grid-row: 1;
-    --on-color: #33aaff;
-    --on-color-dim: rgba(51,170,255,0.25);
-  }
-  .panel-up .led { bottom: 6px; left: 14px; right: 14px; height: 5px; }
+  .panel-up    { grid-column: 2; grid-row: 1; }
+  .panel-up    .led { bottom: 6px; left: 14px; right: 14px; height: 5px; }
 
-  .panel-left {
-    grid-column: 1; grid-row: 2;
-    --on-color: #33aaff;
-    --on-color-dim: rgba(51,170,255,0.25);
-  }
-  .panel-left .led { right: 6px; top: 14px; bottom: 14px; width: 5px; }
+  .panel-left  { grid-column: 1; grid-row: 2; }
+  .panel-left  .led { right: 6px; top: 14px; bottom: 14px; width: 5px; }
 
-  .panel-right {
-    grid-column: 3; grid-row: 2;
-    --on-color: #33aaff;
-    --on-color-dim: rgba(51,170,255,0.25);
-  }
+  .panel-right { grid-column: 3; grid-row: 2; }
   .panel-right .led { left: 6px; top: 14px; bottom: 14px; width: 5px; }
 
-  .panel-down {
-    grid-column: 2; grid-row: 3;
-    --on-color: #33aaff;
-    --on-color-dim: rgba(51,170,255,0.25);
-  }
-  .panel-down .led { top: 6px; left: 14px; right: 14px; height: 5px; }
+  .panel-down  { grid-column: 2; grid-row: 3; }
+  .panel-down  .led { top: 6px; left: 14px; right: 14px; height: 5px; }
 
-  /* ── Center panel (brushed metal) ── */
   .panel-center {
     grid-column: 2; grid-row: 2;
     border-radius: 8px;
     background:
-      repeating-linear-gradient(
-        45deg,
-        rgba(255,255,255,0.018) 0px,
-        rgba(255,255,255,0.018) 1px,
-        transparent 1px,
-        transparent 6px
-      ),
+      repeating-linear-gradient(45deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px, transparent 1px, transparent 6px),
       linear-gradient(160deg, #2c2c2c 0%, #1a1a1a 50%, #222 100%);
     border: 1.5px solid #333;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
   }
 
-  /* ── Corner cells ── */
   .cell-corner {
     border-radius: 8px;
     background: #161616;
@@ -172,61 +305,285 @@
 </head>
 <body>
 
-<div class="pad">
-  <div class="screw-bl"></div>
-  <div class="screw-br"></div>
+<!-- Settings mode (only shown when ?settings in URL) -->
+<div id="settings-mode">
 
-  <!-- Row 1 -->
-  <div class="cell-corner"></div>
-  <div class="panel panel-up" id="panel-up">
-    <div class="led"></div>
-    <div class="arrow"><svg viewBox="0 0 24 24"><path d="M12 5l7 9H5z"/></svg></div>
-  </div>
-  <div class="cell-corner"></div>
+  <!-- Left: controls -->
+  <div id="settings-ui">
+    <h2>Panel Colors</h2>
+    <div class="color-grid">
+      <div class="color-row">
+        <label>↑ Up</label>
+        <input type="color" id="color-up" value="#0000FF">
+      </div>
+      <div class="color-row">
+        <label>↓ Down</label>
+        <input type="color" id="color-down" value="#0000FF">
+      </div>
+      <div class="color-row">
+        <label>← Left</label>
+        <input type="color" id="color-left" value="#FF0000">
+      </div>
+      <div class="color-row">
+        <label>→ Right</label>
+        <input type="color" id="color-right" value="#FF0000">
+      </div>
+    </div>
+    <p class="settings-hint">Changes are not saved until you click Save</p>
 
-  <!-- Row 2 -->
-  <div class="panel panel-left" id="panel-left">
-    <div class="led"></div>
-    <div class="arrow"><svg viewBox="0 0 24 24"><path d="M5 12l9-7v14z"/></svg></div>
-  </div>
-  <div class="panel-center"></div>
-  <div class="panel panel-right" id="panel-right">
-    <div class="led"></div>
-    <div class="arrow"><svg viewBox="0 0 24 24"><path d="M19 12l-9 7V5z"/></svg></div>
-  </div>
+    <hr class="section-divider">
 
-  <!-- Row 3 -->
-  <div class="cell-corner"></div>
-  <div class="panel panel-down" id="panel-down">
-    <div class="led"></div>
-    <div class="arrow"><svg viewBox="0 0 24 24"><path d="M12 19l7-9H5z"/></svg></div>
+    <h2>Input Mapping</h2>
+    <div id="mapper">
+      <div class="map-row" id="map-row-up">
+        <label>↑ Up</label>
+        <span class="map-status" id="map-status-up">—</span>
+        <button class="map-btn" onclick="startListening('up')">Assign</button>
+      </div>
+      <div class="map-row" id="map-row-down">
+        <label>↓ Down</label>
+        <span class="map-status" id="map-status-down">—</span>
+        <button class="map-btn" onclick="startListening('down')">Assign</button>
+      </div>
+      <div class="map-row" id="map-row-left">
+        <label>← Left</label>
+        <span class="map-status" id="map-status-left">—</span>
+        <button class="map-btn" onclick="startListening('left')">Assign</button>
+      </div>
+      <div class="map-row" id="map-row-right">
+        <label>→ Right</label>
+        <span class="map-status" id="map-status-right">—</span>
+        <button class="map-btn" onclick="startListening('right')">Assign</button>
+      </div>
+    </div>
+    <p class="settings-hint" style="margin-top:6px">Click Assign then press the button on your pad</p>
+
+    <hr class="section-divider">
+
+    <div style="display:flex; gap:8px;">
+      <button class="action-btn save-btn" onclick="saveAll()">Save</button>
+      <button class="action-btn reset-btn" onclick="resetAll()">Reset to defaults</button>
+    </div>
+
+    <hr class="section-divider">
+
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <button class="action-btn theme-btn" id="theme-toggle" onclick="toggleTheme()">☀️ Light mode</button>
+    </div>
+
+    <div style="margin-top:auto; padding-top:20px;">
+      <a href="https://github.com/playtagg" target="_blank" class="credit-link">Made with ❤️ by playtagg</a>
+    </div>
+  </div><!-- /settings-ui -->
+
+  <!-- Right: preview -->
+  <div id="settings-preview">
+    <!-- pad is rendered here by JS in settings mode -->
+  </div><!-- /settings-preview -->
+
+</div><!-- /settings-mode -->
+
+<!-- Overlay (OBS mode) -->
+<div id="overlay">
+  <div class="pad">
+    <div class="screw-bl"></div>
+    <div class="screw-br"></div>
+
+    <div class="cell-corner"></div>
+    <div class="panel panel-up" id="panel-up">
+      <div class="led"></div>
+      <div class="arrow"><svg viewBox="0 0 24 24"><path d="M12 5l7 9H5z"/></svg></div>
+    </div>
+    <div class="cell-corner"></div>
+
+    <div class="panel panel-left" id="panel-left">
+      <div class="led"></div>
+      <div class="arrow"><svg viewBox="0 0 24 24"><path d="M5 12l9-7v14z"/></svg></div>
+    </div>
+    <div class="panel-center"></div>
+    <div class="panel panel-right" id="panel-right">
+      <div class="led"></div>
+      <div class="arrow"><svg viewBox="0 0 24 24"><path d="M19 12l-9 7V5z"/></svg></div>
+    </div>
+
+    <div class="cell-corner"></div>
+    <div class="panel panel-down" id="panel-down">
+      <div class="led"></div>
+      <div class="arrow"><svg viewBox="0 0 24 24"><path d="M12 19l7-9H5z"/></svg></div>
+    </div>
+    <div class="cell-corner"></div>
   </div>
-  <div class="cell-corner"></div>
 </div>
 
 <script>
-  // Button mapping: B0=left, B1=right, B2=down, B3=up
-  const BUTTON_MAP = [
-    { button: 0, panel: 'left'  },
-    { button: 1, panel: 'right' },
-    { button: 2, panel: 'down'  },
-    { button: 3, panel: 'up'    },
-  ];
+  const PANELS = ['up','down','left','right'];
 
-  const panelEls = {
-    left:  document.getElementById('panel-left'),
-    right: document.getElementById('panel-right'),
-    down:  document.getElementById('panel-down'),
-    up:    document.getElementById('panel-up'),
+  const DEFAULTS = {
+    colors: { up: '#0000FF', down: '#0000FF', left: '#FF0000', right: '#FF0000' },
+    mapping: { up: null, down: null, left: null, right: null },
   };
 
+  const COLOR_KEY = 'fsr_overlay_v2_colors';
+  const MAP_KEY   = 'fsr_overlay_v2_mapping';
+
+  const panelEls = {
+    up:    document.getElementById('panel-up'),
+    down:  document.getElementById('panel-down'),
+    left:  document.getElementById('panel-left'),
+    right: document.getElementById('panel-right'),
+  };
+
+  const colorInputs = {
+    up:    document.getElementById('color-up'),
+    down:  document.getElementById('color-down'),
+    left:  document.getElementById('color-left'),
+    right: document.getElementById('color-right'),
+  };
+
+  // ── Color helpers ──
+  function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  function applyColor(panel, hex) {
+    panelEls[panel].style.setProperty('--on-color', hex);
+    panelEls[panel].style.setProperty('--on-color-dim', hexToRgba(hex, 0.25));
+  }
+
+  // ── Input mapping ──
+  let buttonMap = { up: null, down: null, left: null, right: null };
+  let listeningFor = null;
+
+  function updateMapStatus(panel) {
+    const el = document.getElementById('map-status-' + panel);
+    if (!el) return;
+    el.textContent = buttonMap[panel] !== null ? 'B' + buttonMap[panel] : '—';
+  }
+
+  function startListening(panel) {
+    listeningFor = panel;
+    PANELS.forEach(p => document.getElementById('map-row-' + p).classList.toggle('listening', p === panel));
+    const el = document.getElementById('map-status-' + panel);
+    if (el) el.textContent = 'Press…';
+  }
+
+  function stopListening() {
+    if (!listeningFor) return;
+    document.getElementById('map-row-' + listeningFor).classList.remove('listening');
+    listeningFor = null;
+  }
+
+  // ── Theme toggle ──
+  function toggleTheme() {
+    const isLight = document.body.classList.toggle('light');
+    document.getElementById('theme-toggle').textContent = isLight ? '🌙 Dark mode' : '☀️ Light mode';
+    try { localStorage.setItem('fsr_overlay_v2_theme', isLight ? 'light' : 'dark'); } catch(e) {}
+  }
+
+  // ── Save / Reset ──
+  function saveAll() {
+    const colors = {};
+    PANELS.forEach(p => colors[p] = colorInputs[p].value);
+    try { localStorage.setItem(COLOR_KEY, JSON.stringify(colors)); } catch(e) {}
+    try { localStorage.setItem(MAP_KEY, JSON.stringify(buttonMap)); } catch(e) {}
+    showToast('Saved! Reload the overlay in OBS to apply.');
+  }
+
+  function resetAll() {
+    // Reset colors
+    PANELS.forEach(p => {
+      colorInputs[p].value = DEFAULTS.colors[p];
+      applyColor(p, DEFAULTS.colors[p]);
+    });
+    // Reset mapping
+    PANELS.forEach(p => { buttonMap[p] = null; updateMapStatus(p); });
+    // Clear storage
+    try { localStorage.removeItem(COLOR_KEY); } catch(e) {}
+    try { localStorage.removeItem(MAP_KEY); } catch(e) {}
+    showToast('Reset to defaults.');
+  }
+
+  function showToast(msg) {
+    let t = document.getElementById('toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'toast';
+      t.style.cssText = 'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#222;color:#aaa;font-size:11px;letter-spacing:0.06em;padding:8px 16px;border-radius:6px;border:1px solid #333;pointer-events:none;transition:opacity 0.3s;';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1';
+    clearTimeout(t._timeout);
+    t._timeout = setTimeout(() => t.style.opacity = '0', 2500);
+  }
+
+  // ── Load saved config ──
+  function loadSaved() {
+    try {
+      const rawColors = localStorage.getItem(COLOR_KEY);
+      if (rawColors) {
+        const data = JSON.parse(rawColors);
+        PANELS.forEach(p => { if (data[p]) { colorInputs[p].value = data[p]; applyColor(p, data[p]); } });
+      } else {
+        PANELS.forEach(p => applyColor(p, DEFAULTS.colors[p]));
+      }
+    } catch(e) { PANELS.forEach(p => applyColor(p, DEFAULTS.colors[p])); }
+
+    try {
+      const rawMap = localStorage.getItem(MAP_KEY);
+      if (rawMap) {
+        const data = JSON.parse(rawMap);
+        PANELS.forEach(p => { buttonMap[p] = data[p] !== undefined ? data[p] : null; });
+      }
+    } catch(e) {}
+    PANELS.forEach(p => updateMapStatus(p));
+  }
+
+  // ── Init ──
+  PANELS.forEach(p => colorInputs[p].addEventListener('input', () => applyColor(p, colorInputs[p].value)));
+  loadSaved();
+
+  // Load saved theme
+  try {
+    if (localStorage.getItem('fsr_overlay_v2_theme') === 'light') {
+      document.body.classList.add('light');
+      const btn = document.getElementById('theme-toggle');
+      if (btn) btn.textContent = '🌙 Dark mode';
+    }
+  } catch(e) {}
+
+  // ── Show settings UI if ?settings in URL ──
+  if (location.search.includes('settings')) {
+    document.documentElement.classList.add('settings-open');
+    document.body.classList.add('settings-open');
+    document.getElementById('settings-mode').classList.add('visible');
+    const preview = document.getElementById('settings-preview');
+    const overlay = document.getElementById('overlay');
+    preview.appendChild(overlay);
+  }
+
+  // ── Gamepad tick ──
   function tick() {
     const gamepads = navigator.getGamepads();
     for (const gp of gamepads) {
       if (!gp) continue;
-      for (const { button, panel } of BUTTON_MAP) {
-        const btn = gp.buttons[button];
-        if (btn) panelEls[panel].classList.toggle('pressed', btn.pressed);
+      if (listeningFor) {
+        for (let i = 0; i < gp.buttons.length; i++) {
+          if (gp.buttons[i].pressed) {
+            buttonMap[listeningFor] = i;
+            updateMapStatus(listeningFor);
+            stopListening();
+            break;
+          }
+        }
+      }
+      for (const p of PANELS) {
+        if (buttonMap[p] === null) { panelEls[p].classList.remove('pressed'); continue; }
+        const btn = gp.buttons[buttonMap[p]];
+        if (btn) panelEls[p].classList.toggle('pressed', btn.pressed);
       }
     }
     requestAnimationFrame(tick);
