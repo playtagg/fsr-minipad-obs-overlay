@@ -1,6 +1,6 @@
 # fsr-minipad-obs-overlay
 
-An OBS browser source overlay that visualizes [Rhythm Technologies FSR Mini Pad](https://ddrexp.nl/fsrminipad/) inputs in real time. Includes two visual styles, each with a built-in settings page for customizing panel colors and input mapping.
+An OBS browser source overlay that visualizes [Rhythm Technologies FSR Mini Pad](https://ddrexp.nl/fsrminipad/) inputs in real time based on the gampead api. Includes two visual styles, each with a built-in settings page for customizing panel colors and input mapping.
 
 ---
 
